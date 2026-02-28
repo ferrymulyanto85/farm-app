@@ -13,7 +13,7 @@ export default async function ProfilPage() {
 
   if (!user) redirect("/login");
 
-  const initials = user.nama
+  const initials = user.name
     .split(" ")
     .map((n) => n[0])
     .join("")
@@ -30,7 +30,7 @@ export default async function ProfilPage() {
             {initials}
           </div>
           <div className="flex-1 text-center sm:text-left">
-            <h2 className="text-xl font-semibold text-gray-900">{user.nama}</h2>
+            <h2 className="text-xl font-semibold text-gray-900">{user.name}</h2>
             <p className="text-gray-500 mt-1">{user.email}</p>
             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-hijau-100 text-hijau-800 mt-2 capitalize">
               {user.role}
@@ -41,7 +41,7 @@ export default async function ProfilPage() {
         <div className="mt-6 pt-6 border-t border-gray-100 grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label className="text-sm font-medium text-gray-500">Nama Lengkap</label>
-            <p className="mt-1 text-gray-900">{user.nama}</p>
+            <p className="mt-1 text-gray-900">{user.name}</p>
           </div>
           <div>
             <label className="text-sm font-medium text-gray-500">Email</label>
@@ -50,7 +50,7 @@ export default async function ProfilPage() {
           <div>
             <label className="text-sm font-medium text-gray-500">No. Telepon</label>
             <p className="mt-1 text-gray-900">
-              {user.noTelepon || "Belum diatur"}
+              {user.phone || "Belum diatur"}
             </p>
           </div>
           <div>

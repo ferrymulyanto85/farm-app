@@ -16,7 +16,7 @@ export async function PATCH(
     where: {
       id: params.id,
       lahan: { userId: session.user.id },
-      status: "dijadwalkan",
+      status: "DIJADWALKAN",
     },
   });
 
@@ -26,7 +26,7 @@ export async function PATCH(
 
   await prisma.jadwalIrigasi.update({
     where: { id: params.id },
-    data: { status: "selesai" },
+    data: { status: "SELESAI" },
   });
 
   return NextResponse.json({ success: true });

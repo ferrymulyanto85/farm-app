@@ -15,8 +15,8 @@ const geistMono = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "Asribuanafarm - Mitra Portal",
-  description: "Portal Mitra Asribuanafarm - Manajemen Pertanian Jagung",
+  title: "Asribuanafarm - Farm Management",
+  description: "Sistem manajemen pertanian Asribuanafarm",
 };
 
 export default function RootLayout({

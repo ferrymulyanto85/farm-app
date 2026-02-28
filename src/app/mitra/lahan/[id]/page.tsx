@@ -5,23 +5,21 @@ import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 
 const STATUS_LABELS: Record<string, string> = {
-  perencanaan: "Perencanaan",
-  persiapan_lahan: "Persiapan Lahan",
-  penanaman: "Penanaman",
-  perawatan: "Perawatan",
-  panen: "Panen",
-  selesai: "Selesai",
-  gagal: "Gagal",
+  PERSIAPAN: "Persiapan",
+  TANAM: "Tanam",
+  VEGETATIF: "Vegetatif",
+  GENERATIF: "Generatif",
+  PANEN: "Panen",
+  SELESAI: "Selesai",
 };
 
 const STATUS_COLORS: Record<string, string> = {
-  perencanaan: "bg-gray-100 text-gray-700",
-  persiapan_lahan: "bg-yellow-100 text-yellow-800",
-  penanaman: "bg-blue-100 text-blue-800",
-  perawatan: "bg-hijau-100 text-hijau-800",
-  panen: "bg-amber-100 text-amber-800",
-  selesai: "bg-hijau-100 text-hijau-800",
-  gagal: "bg-red-100 text-red-800",
+  PERSIAPAN: "bg-gray-100 text-gray-700",
+  TANAM: "bg-yellow-100 text-yellow-800",
+  VEGETATIF: "bg-blue-100 text-blue-800",
+  GENERATIF: "bg-hijau-100 text-hijau-800",
+  PANEN: "bg-amber-100 text-amber-800",
+  SELESAI: "bg-hijau-100 text-hijau-800",
 };
 
 export default async function LahanDetailPage({
@@ -50,7 +48,7 @@ export default async function LahanDetailPage({
   if (!lahan) notFound();
 
   const siklusAktif = lahan.siklusTanam.find(
-    (s) => !["selesai", "gagal"].includes(s.status)
+    (s) => s.status !== "SELESAI"
   );
 
   return (
@@ -83,25 +81,23 @@ export default async function LahanDetailPage({
                 </svg>
                 <span>Luas: {Number(lahan.luasHektar)} Hektar</span>
               </div>
-              {siklusAktif && (
-                <div className="flex items-center gap-2 text-gray-600">
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
-                  </svg>
-                  <span>Komoditas: Jagung ({siklusAktif.varietas})</span>
-                </div>
-              )}
+              <div className="flex items-center gap-2 text-gray-600">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
+                </svg>
+                <span>Komoditas: {lahan.komoditas}</span>
+              </div>
             </div>
           </div>
           <div className="flex flex-col gap-2">
             <span
               className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
-                siklusAktif
+                lahan.status === "AKTIF"
                   ? "bg-hijau-100 text-hijau-800"
                   : "bg-gray-100 text-gray-600"
               }`}
             >
-              {siklusAktif ? "AKTIF" : "TIDAK AKTIF"}
+              {lahan.status === "AKTIF" ? "AKTIF" : "TIDAK AKTIF"}
             </span>
           </div>
         </div>
@@ -148,7 +144,7 @@ export default async function LahanDetailPage({
           <div className="divide-y divide-gray-50">
             {lahan.siklusTanam.map((siklus) => {
               const totalHasil = siklus.hasilPanen.reduce(
-                (sum, h) => sum + Number(h.jumlahKg),
+                (sum, h) => sum + Number(h.beratKg),
                 0
               );
               return (
@@ -182,7 +178,7 @@ export default async function LahanDetailPage({
                           }
                         )}{" "}
                         &middot; Est. Panen:{" "}
-                        {new Date(siklus.estimasiPanen).toLocaleDateString(
+                        {new Date(siklus.tanggalPanenEstimasi).toLocaleDateString(
                           "id-ID",
                           {
                             day: "numeric",
@@ -193,7 +189,7 @@ export default async function LahanDetailPage({
                       </p>
                     </div>
                     <div className="text-right">
-                      {siklus.status === "selesai" && totalHasil > 0 && (
+                      {siklus.status === "SELESAI" && totalHasil > 0 && (
                         <p className="text-sm font-medium text-hijau-700">
                           Hasil: {totalHasil.toLocaleString("id-ID")} kg
                         </p>
@@ -208,11 +204,6 @@ export default async function LahanDetailPage({
                       )}
                     </div>
                   </div>
-                  {siklus.catatan && (
-                    <p className="text-sm text-gray-500 mt-2 italic">
-                      {siklus.catatan}
-                    </p>
-                  )}
                 </div>
               );
             })}

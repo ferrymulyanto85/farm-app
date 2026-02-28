@@ -26,14 +26,14 @@ export default async function MitraDashboard() {
         where: {
           lahan: { userId },
           status: {
-            notIn: ["selesai", "gagal"],
+            notIn: ["SELESAI"],
           },
         },
       }),
       prisma.hasilPanen.count({
         where: {
-          siklusTanam: { lahan: { userId } },
-          tanggalPanen: {
+          siklus: { lahan: { userId } },
+          createdAt: {
             gte: startOfMonth,
             lte: endOfMonth,
           },
@@ -43,7 +43,7 @@ export default async function MitraDashboard() {
         where: { userId },
         include: {
           siklusTanam: {
-            where: { status: { notIn: ["selesai", "gagal"] } },
+            where: { status: { notIn: ["SELESAI"] } },
             orderBy: { createdAt: "desc" },
             take: 1,
           },
@@ -58,7 +58,7 @@ export default async function MitraDashboard() {
             gte: today,
             lt: tomorrow,
           },
-          status: "dijadwalkan",
+          status: "DIJADWALKAN",
         },
         include: {
           lahan: { select: { nama: true } },

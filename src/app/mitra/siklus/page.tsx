@@ -5,34 +5,31 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 
 const STATUS_STEPS = [
-  "perencanaan",
-  "persiapan_lahan",
-  "penanaman",
-  "perawatan",
-  "panen",
-  "selesai",
+  "PERSIAPAN",
+  "TANAM",
+  "VEGETATIF",
+  "GENERATIF",
+  "PANEN",
+  "SELESAI",
 ] as const;
 
 const STATUS_LABELS: Record<string, string> = {
-  perencanaan: "Perencanaan",
-  persiapan_lahan: "Persiapan Lahan",
-  penanaman: "Penanaman",
-  perawatan: "Perawatan",
-  panen: "Panen",
-  selesai: "Selesai",
-  gagal: "Gagal",
+  PERSIAPAN: "Persiapan",
+  TANAM: "Tanam",
+  VEGETATIF: "Vegetatif",
+  GENERATIF: "Generatif",
+  PANEN: "Panen",
+  SELESAI: "Selesai",
 };
 
 function getProgressPercentage(status: string): number {
-  if (status === "gagal") return 0;
   const idx = STATUS_STEPS.indexOf(status as (typeof STATUS_STEPS)[number]);
   if (idx === -1) return 0;
   return Math.round(((idx + 1) / STATUS_STEPS.length) * 100);
 }
 
 function getProgressColor(status: string): string {
-  if (status === "gagal") return "bg-red-500";
-  if (status === "selesai") return "bg-hijau-600";
+  if (status === "SELESAI") return "bg-hijau-600";
   return "bg-hijau-500";
 }
 
@@ -43,7 +40,7 @@ export default async function SiklusTanamPage() {
   const siklusList = await prisma.siklusTanam.findMany({
     where: {
       lahan: { userId: session.user.id },
-      status: { notIn: ["selesai", "gagal"] },
+      status: { notIn: ["SELESAI"] },
     },
     include: {
       lahan: { select: { nama: true } },
@@ -113,7 +110,7 @@ export default async function SiklusTanamPage() {
                         }
                       )}{" "}
                       &middot; Est. Panen:{" "}
-                      {new Date(siklus.estimasiPanen).toLocaleDateString(
+                      {new Date(siklus.tanggalPanenEstimasi).toLocaleDateString(
                         "id-ID",
                         {
                           day: "numeric",
@@ -186,12 +183,6 @@ export default async function SiklusTanamPage() {
                     );
                   })}
                 </div>
-
-                {siklus.catatan && (
-                  <p className="text-sm text-gray-500 mt-4 italic border-t border-gray-50 pt-3">
-                    {siklus.catatan}
-                  </p>
-                )}
 
                 <div className="mt-4 pt-3 border-t border-gray-50">
                   <Link

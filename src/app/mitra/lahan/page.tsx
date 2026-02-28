@@ -12,7 +12,7 @@ export default async function LahanPage() {
     where: { userId: session.user.id },
     include: {
       siklusTanam: {
-        where: { status: { notIn: ["selesai", "gagal"] } },
+        where: { status: { notIn: ["SELESAI"] } },
         orderBy: { createdAt: "desc" },
         take: 1,
       },
@@ -50,7 +50,7 @@ export default async function LahanPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {lahanList.map((lahan) => {
             const siklusAktif = lahan.siklusTanam[0];
-            const hasActiveCycle = !!siklusAktif;
+            const isAktif = lahan.status === "AKTIF";
 
             return (
               <div
@@ -64,12 +64,12 @@ export default async function LahanPage() {
                     </h3>
                     <span
                       className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        hasActiveCycle
+                        isAktif
                           ? "bg-hijau-100 text-hijau-800"
                           : "bg-gray-100 text-gray-600"
                       }`}
                     >
-                      {hasActiveCycle ? "AKTIF" : "TIDAK AKTIF"}
+                      {isAktif ? "AKTIF" : "TIDAK AKTIF"}
                     </span>
                   </div>
                   <div className="space-y-2 text-sm text-gray-500">

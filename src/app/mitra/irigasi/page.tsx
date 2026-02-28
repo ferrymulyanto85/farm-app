@@ -5,21 +5,17 @@ import { redirect } from "next/navigation";
 import { IrigasiActions } from "./actions";
 
 const STATUS_MAP: Record<string, { label: string; className: string }> = {
-  dijadwalkan: {
+  DIJADWALKAN: {
     label: "DIJADWALKAN",
     className: "bg-blue-100 text-blue-800",
   },
-  selesai: {
+  SELESAI: {
     label: "SELESAI",
     className: "bg-hijau-100 text-hijau-800",
   },
-  dibatalkan: {
+  DIBATALKAN: {
     label: "DIBATALKAN",
     className: "bg-red-100 text-red-800",
-  },
-  terlewat: {
-    label: "TERLEWAT",
-    className: "bg-gray-100 text-gray-600",
   },
 };
 
@@ -57,7 +53,7 @@ export default async function IrigasiPage() {
     },
     include: {
       lahan: { select: { nama: true } },
-      siklusTanam: { select: { varietas: true } },
+      siklus: { select: { varietas: true } },
     },
     orderBy: { tanggalWaktu: "asc" },
   });
@@ -132,7 +128,7 @@ export default async function IrigasiPage() {
                 <div className="space-y-3">
                   {items.map((jadwal) => {
                     const statusInfo =
-                      STATUS_MAP[jadwal.status] || STATUS_MAP.dijadwalkan;
+                      STATUS_MAP[jadwal.status] || STATUS_MAP.DIJADWALKAN;
                     const waktu = new Date(
                       jadwal.tanggalWaktu
                     ).toLocaleTimeString("id-ID", {
@@ -144,7 +140,7 @@ export default async function IrigasiPage() {
                       <div
                         key={jadwal.id}
                         className={`bg-white rounded-xl shadow-sm border p-5 ${
-                          isToday && jadwal.status === "dijadwalkan"
+                          isToday && jadwal.status === "DIJADWALKAN"
                             ? "border-hijau-200"
                             : "border-gray-100"
                         }`}
@@ -174,20 +170,18 @@ export default async function IrigasiPage() {
                                 </svg>
                                 {jadwal.durasiMenit} menit
                               </span>
-                              {jadwal.volumeLiter && (
-                                <span className="flex items-center gap-1">
-                                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" />
-                                  </svg>
-                                  {Number(jadwal.volumeLiter)} liter
-                                </span>
-                              )}
-                              {jadwal.siklusTanam && (
+                              <span className="flex items-center gap-1">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" />
+                                </svg>
+                                {Number(jadwal.volumeLiter)} liter
+                              </span>
+                              {jadwal.siklus && (
                                 <span className="flex items-center gap-1">
                                   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
                                   </svg>
-                                  {jadwal.siklusTanam.varietas}
+                                  {jadwal.siklus.varietas}
                                 </span>
                               )}
                             </div>
@@ -197,7 +191,7 @@ export default async function IrigasiPage() {
                               </p>
                             )}
                           </div>
-                          {jadwal.status === "dijadwalkan" && (
+                          {jadwal.status === "DIJADWALKAN" && (
                             <IrigasiActions jadwalId={jadwal.id} />
                           )}
                         </div>
