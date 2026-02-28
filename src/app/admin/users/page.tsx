@@ -1,97 +1,94 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { prisma } from "@/lib/prisma";
+import type { User } from "@/types";
 
-async function getUsersData() {
-  const users = await prisma.user.findMany({
-    where: { role: "MITRA" },
-    orderBy: { createdAt: "desc" },
-    include: {
-      _count: {
-        select: { lahan: true },
-      },
-    },
-  });
+export default function UsersListPage() {
+  const [users, setUsers] = useState<User[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  return users;
-}
+  useEffect(() => {
+    fetchUsers();
+  }, []);
 
-function formatDate(date: Date) {
-  return new Intl.DateTimeFormat("id-ID", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  }).format(new Date(date));
-}
+  async function fetchUsers() {
+    const res = await fetch("/api/users");
+    const data = await res.json();
+    setUsers(Array.isArray(data) ? data : []);
+    setLoading(false);
+  }
 
-export default async function AdminUsersPage() {
-  const users = await getUsersData();
+  async function handleDelete(id: string) {
+    if (!confirm("Yakin ingin menghapus user ini?")) return;
+
+    const res = await fetch(`/api/users/${id}`, { method: "DELETE" });
+    if (res.ok) {
+      setUsers(users.filter((u) => u.id !== id));
+    }
+  }
+
+  if (loading) {
+    return <p className="text-gray-500">Memuat data users...</p>;
+  }
 
   return (
     <div>
-      <div className="mb-6 flex items-center justify-between">
-        <h2 className="text-2xl font-bold text-gray-900">Manajemen User</h2>
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold text-gray-900">Daftar Users</h1>
         <Link
           href="/admin/users/tambah"
-          className="inline-flex items-center gap-2 rounded-lg bg-brand-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-brand-700"
+          className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700"
         >
-          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-          </svg>
-          Tambah Mitra
+          + Tambah User
         </Link>
       </div>
 
-      <div className="rounded-lg border border-gray-200 bg-white shadow-sm">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm">
-            <thead className="border-b border-gray-200 bg-gray-50 text-xs uppercase text-gray-500">
+      {users.length === 0 ? (
+        <p className="text-gray-500">Belum ada data user.</p>
+      ) : (
+        <div className="bg-white shadow rounded-lg overflow-hidden">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-3">Nama</th>
-                <th className="px-6 py-3">Email</th>
-                <th className="px-6 py-3">No. Telepon</th>
-                <th className="px-6 py-3">Jumlah Lahan</th>
-                <th className="px-6 py-3">Terdaftar</th>
-                <th className="px-6 py-3">Aksi</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nama</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Role</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">No. Telepon</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Aksi</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200">
-              {users.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="px-6 py-8 text-center text-gray-500">
-                    Belum ada data mitra.
+            <tbody className="bg-white divide-y divide-gray-200">
+              {users.map((user) => (
+                <tr key={user.id}>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{user.nama}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.email}</td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span className={`px-2 py-1 text-xs rounded-full ${
+                      user.role === "admin"
+                        ? "bg-purple-100 text-purple-800"
+                        : "bg-blue-100 text-blue-800"
+                    }`}>
+                      {user.role}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {user.no_telepon || "-"}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm">
+                    <button
+                      onClick={() => handleDelete(user.id)}
+                      className="text-red-600 hover:text-red-800"
+                    >
+                      Hapus
+                    </button>
                   </td>
                 </tr>
-              ) : (
-                users.map((user) => (
-                  <tr key={user.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 font-medium text-gray-900">
-                      {user.name}
-                    </td>
-                    <td className="px-6 py-4 text-gray-600">{user.email}</td>
-                    <td className="px-6 py-4 text-gray-600">
-                      {user.phone || "-"}
-                    </td>
-                    <td className="px-6 py-4 text-gray-600">
-                      {user._count.lahan}
-                    </td>
-                    <td className="px-6 py-4 text-gray-600">
-                      {formatDate(user.createdAt)}
-                    </td>
-                    <td className="px-6 py-4">
-                      <Link
-                        href={`/admin/users/${user.id}`}
-                        className="font-medium text-brand-600 hover:text-brand-700"
-                      >
-                        Detail
-                      </Link>
-                    </td>
-                  </tr>
-                ))
-              )}
+              ))}
             </tbody>
           </table>
         </div>
-      </div>
+      )}
     </div>
   );
 }

@@ -1,104 +1,102 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { prisma } from "@/lib/prisma";
+import type { Lahan } from "@/types";
 
-async function getLahanData() {
-  const lahanList = await prisma.lahan.findMany({
-    orderBy: { createdAt: "desc" },
-    include: {
-      user: { select: { name: true } },
-    },
-  });
+export default function LahanListPage() {
+  const [lahanList, setLahanList] = useState<Lahan[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  return lahanList;
-}
+  useEffect(() => {
+    fetchLahan();
+  }, []);
 
-const statusLabels: Record<string, { label: string; color: string }> = {
-  AKTIF: { label: "Aktif", color: "bg-green-100 text-green-700" },
-  TIDAK_AKTIF: { label: "Tidak Aktif", color: "bg-gray-100 text-gray-500" },
-};
+  async function fetchLahan() {
+    const res = await fetch("/api/lahan");
+    const data = await res.json();
+    setLahanList(Array.isArray(data) ? data : []);
+    setLoading(false);
+  }
 
-export default async function AdminLahanPage() {
-  const lahanList = await getLahanData();
+  async function handleDelete(id: string) {
+    if (!confirm("Yakin ingin menghapus lahan ini?")) return;
+
+    const res = await fetch(`/api/lahan/${id}`, { method: "DELETE" });
+    if (res.ok) {
+      setLahanList(lahanList.filter((l) => l.id !== id));
+    }
+  }
+
+  if (loading) {
+    return <p className="text-gray-500">Memuat data lahan...</p>;
+  }
 
   return (
     <div>
-      <div className="mb-6 flex items-center justify-between">
-        <h2 className="text-2xl font-bold text-gray-900">Daftar Lahan</h2>
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold text-gray-900">Daftar Lahan</h1>
         <Link
           href="/admin/lahan/tambah"
-          className="inline-flex items-center gap-2 rounded-lg bg-brand-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-brand-700"
+          className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700"
         >
-          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-          </svg>
-          Tambah Lahan
+          + Tambah Lahan
         </Link>
       </div>
 
-      <div className="rounded-lg border border-gray-200 bg-white shadow-sm">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm">
-            <thead className="border-b border-gray-200 bg-gray-50 text-xs uppercase text-gray-500">
+      {lahanList.length === 0 ? (
+        <p className="text-gray-500">Belum ada data lahan.</p>
+      ) : (
+        <div className="bg-white shadow rounded-lg overflow-hidden">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-3">Nama Lahan</th>
-                <th className="px-6 py-3">Mitra</th>
-                <th className="px-6 py-3">Komoditas</th>
-                <th className="px-6 py-3">Luas (Ha)</th>
-                <th className="px-6 py-3">Status</th>
-                <th className="px-6 py-3">Aksi</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nama</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Lokasi</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Luas (Ha)</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Komoditas</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Mitra</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Aksi</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200">
-              {lahanList.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="px-6 py-8 text-center text-gray-500">
-                    Belum ada data lahan.
+            <tbody className="bg-white divide-y divide-gray-200">
+              {lahanList.map((lahan) => (
+                <tr key={lahan.id}>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{lahan.nama}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{lahan.lokasi || "-"}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{lahan.luas_hektar}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{lahan.komoditas || "-"}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {lahan.users?.nama || "-"}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span className={`px-2 py-1 text-xs rounded-full ${
+                      lahan.status === "aktif" ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"
+                    }`}>
+                      {lahan.status}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm space-x-2">
+                    <Link
+                      href={`/admin/lahan/${lahan.id}/edit`}
+                      className="text-blue-600 hover:text-blue-800"
+                    >
+                      Edit
+                    </Link>
+                    <button
+                      onClick={() => handleDelete(lahan.id)}
+                      className="text-red-600 hover:text-red-800"
+                    >
+                      Hapus
+                    </button>
                   </td>
                 </tr>
-              ) : (
-                lahanList.map((lahan) => {
-                  const statusInfo = statusLabels[lahan.status] || {
-                    label: lahan.status,
-                    color: "bg-gray-100 text-gray-700",
-                  };
-
-                  return (
-                    <tr key={lahan.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 font-medium text-gray-900">
-                        {lahan.nama}
-                      </td>
-                      <td className="px-6 py-4 text-gray-600">
-                        {lahan.user.name}
-                      </td>
-                      <td className="px-6 py-4 text-gray-600">
-                        {lahan.komoditas}
-                      </td>
-                      <td className="px-6 py-4 text-gray-600">
-                        {Number(lahan.luasHektar).toLocaleString("id-ID")}
-                      </td>
-                      <td className="px-6 py-4">
-                        <span
-                          className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${statusInfo.color}`}
-                        >
-                          {statusInfo.label}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <Link
-                          href={`/admin/lahan/${lahan.id}`}
-                          className="font-medium text-brand-600 hover:text-brand-700"
-                        >
-                          Detail
-                        </Link>
-                      </td>
-                    </tr>
-                  );
-                })
-              )}
+              ))}
             </tbody>
           </table>
         </div>
-      </div>
+      )}
     </div>
   );
 }

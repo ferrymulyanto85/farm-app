@@ -1,102 +1,62 @@
 import { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
-import { prisma } from "@/lib/prisma";
+import { supabaseAdmin } from "./supabase";
 
 export const authOptions: NextAuthOptions = {
   providers: [
     CredentialsProvider({
-      id: "admin-login",
-      name: "Admin Login",
+      name: "Credentials",
       credentials: {
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
-          throw new Error("Email dan password harus diisi");
+          return null;
         }
 
-        const user = await prisma.user.findUnique({
-          where: { email: credentials.email },
-        });
+        const { data: user, error } = await supabaseAdmin
+          .from("users")
+          .select("id, nama, email, role, password_hash")
+          .eq("email", credentials.email)
+          .single();
 
-        if (!user) {
-          throw new Error("Email tidak ditemukan");
+        if (error || !user || !user.password_hash) {
+          return null;
         }
 
-        const isPasswordValid = await bcrypt.compare(
+        const isValid = await bcrypt.compare(
           credentials.password,
-          user.password
+          user.password_hash
         );
 
-        if (!isPasswordValid) {
-          throw new Error("Password salah");
+        if (!isValid) {
+          return null;
         }
 
         return {
           id: user.id,
-          name: user.name,
+          name: user.nama,
           email: user.email,
           role: user.role,
-        };
-      },
-    }),
-    CredentialsProvider({
-      id: "otp-login",
-      name: "OTP Login",
-      credentials: {
-        phone: { label: "No. Telepon", type: "text" },
-        otp: { label: "Kode OTP", type: "text" },
-      },
-      async authorize(credentials) {
-        if (!credentials?.phone || !credentials?.otp) {
-          throw new Error("Nomor telepon dan OTP harus diisi");
-        }
-
-        const user = await prisma.user.findFirst({
-          where: {
-            phone: credentials.phone,
-            otp: credentials.otp,
-            otpExpiresAt: { gte: new Date() },
-          },
-        });
-
-        if (!user) {
-          throw new Error("OTP tidak valid atau sudah kadaluarsa");
-        }
-
-        // Clear OTP after successful verification
-        await prisma.user.update({
-          where: { id: user.id },
-          data: { otp: null, otpExpiresAt: null },
-        });
-
-        return {
-          id: user.id,
-          name: user.name,
-          email: user.email,
-          role: user.role,
+          nama: user.nama,
         };
       },
     }),
   ],
-  session: {
-    strategy: "jwt",
-    maxAge: 24 * 60 * 60, // 24 hours
-  },
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
-        token.role = user.role;
         token.id = user.id;
+        token.role = user.role;
       }
       return token;
     },
     async session({ session, token }) {
       if (session.user) {
-        session.user.role = token.role as string;
-        session.user.id = token.id as string;
+        session.user.id = token.id;
+        session.user.role = token.role;
       }
       return session;
     },
@@ -104,4 +64,8 @@ export const authOptions: NextAuthOptions = {
   pages: {
     signIn: "/login",
   },
+  session: {
+    strategy: "jwt",
+  },
+  secret: process.env.NEXTAUTH_SECRET,
 };

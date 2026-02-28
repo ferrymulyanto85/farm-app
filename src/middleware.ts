@@ -20,7 +20,7 @@ export async function middleware(request: NextRequest) {
     // Redirect authenticated users away from login page
     if (pathname === "/login" && token) {
       const redirectUrl =
-        token.role === "ADMIN" ? "/admin" : "/mitra";
+        token.role === "admin" ? "/admin/dashboard" : "/mitra/dashboard";
       return NextResponse.redirect(new URL(redirectUrl, request.url));
     }
     return NextResponse.next();
@@ -34,12 +34,12 @@ export async function middleware(request: NextRequest) {
   }
 
   // Role-based route protection
-  if (pathname.startsWith("/admin") && token.role !== "ADMIN") {
-    return NextResponse.redirect(new URL("/unauthorized", request.url));
+  if (pathname.startsWith("/admin") && token.role !== "admin") {
+    return NextResponse.redirect(new URL("/login", request.url));
   }
 
-  if (pathname.startsWith("/mitra") && token.role !== "MITRA") {
-    return NextResponse.redirect(new URL("/unauthorized", request.url));
+  if (pathname.startsWith("/mitra") && token.role !== "mitra") {
+    return NextResponse.redirect(new URL("/login", request.url));
   }
 
   return NextResponse.next();
