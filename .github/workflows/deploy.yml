@@ -15,11 +15,11 @@ jobs:
         uses: appleboy/ssh-action@v1
         with:
           host: ${{ secrets.SECRET_HOST }}
-          username: ubuntu
+          username: root
           key: ${{ secrets.SECRET_SSH_KEY }}
           script: |
             cd /home/ubuntu/farm-app
             git pull origin main
             npm install
             npm run build
-            pm2 restart farm-app
+            pm2 restart farm-app || pm2 start npm --name farm-app -- start
