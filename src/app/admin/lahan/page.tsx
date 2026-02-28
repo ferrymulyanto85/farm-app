@@ -5,18 +5,7 @@ async function getLahanData() {
   const lahanList = await prisma.lahan.findMany({
     orderBy: { createdAt: "desc" },
     include: {
-      user: { select: { nama: true } },
-      siklusTanam: {
-        where: {
-          status: { notIn: ["selesai", "gagal"] },
-        },
-        orderBy: { createdAt: "desc" },
-        take: 1,
-        select: {
-          varietas: true,
-          status: true,
-        },
-      },
+      user: { select: { name: true } },
     },
   });
 
@@ -24,11 +13,8 @@ async function getLahanData() {
 }
 
 const statusLabels: Record<string, { label: string; color: string }> = {
-  perencanaan: { label: "Perencanaan", color: "bg-gray-100 text-gray-700" },
-  persiapan_lahan: { label: "Persiapan Lahan", color: "bg-yellow-100 text-yellow-700" },
-  penanaman: { label: "Penanaman", color: "bg-blue-100 text-blue-700" },
-  perawatan: { label: "Perawatan", color: "bg-cyan-100 text-cyan-700" },
-  panen: { label: "Panen", color: "bg-green-100 text-green-700" },
+  AKTIF: { label: "Aktif", color: "bg-green-100 text-green-700" },
+  TIDAK_AKTIF: { label: "Tidak Aktif", color: "bg-gray-100 text-gray-500" },
 };
 
 export default async function AdminLahanPage() {
@@ -71,13 +57,10 @@ export default async function AdminLahanPage() {
                 </tr>
               ) : (
                 lahanList.map((lahan) => {
-                  const activeSiklus = lahan.siklusTanam[0];
-                  const statusInfo = activeSiklus
-                    ? statusLabels[activeSiklus.status] || {
-                        label: activeSiklus.status,
-                        color: "bg-gray-100 text-gray-700",
-                      }
-                    : { label: "Tidak Aktif", color: "bg-gray-100 text-gray-500" };
+                  const statusInfo = statusLabels[lahan.status] || {
+                    label: lahan.status,
+                    color: "bg-gray-100 text-gray-700",
+                  };
 
                   return (
                     <tr key={lahan.id} className="hover:bg-gray-50">
@@ -85,10 +68,10 @@ export default async function AdminLahanPage() {
                         {lahan.nama}
                       </td>
                       <td className="px-6 py-4 text-gray-600">
-                        {lahan.user.nama}
+                        {lahan.user.name}
                       </td>
                       <td className="px-6 py-4 text-gray-600">
-                        {activeSiklus ? activeSiklus.varietas : "-"}
+                        {lahan.komoditas}
                       </td>
                       <td className="px-6 py-4 text-gray-600">
                         {Number(lahan.luasHektar).toLocaleString("id-ID")}

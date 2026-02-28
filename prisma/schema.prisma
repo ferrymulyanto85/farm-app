@@ -7,160 +7,138 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum UserRole {
-  admin
-  mitra
-  supervisor
-
-  @@map("user_role")
+enum Role {
+  ADMIN
+  MITRA
+  SUPERVISOR
 }
 
-enum VarietasJagung {
-  NK212
-  Bisi_18   @map("Bisi-18")
-  Pioneer_P27 @map("Pioneer P27")
-
-  @@map("varietas_jagung")
+enum StatusLahan {
+  AKTIF
+  TIDAK_AKTIF
 }
 
 enum StatusSiklus {
-  perencanaan
-  persiapan_lahan
-  penanaman
-  perawatan
-  panen
-  selesai
-  gagal
-
-  @@map("status_siklus")
+  PERSIAPAN
+  TANAM
+  VEGETATIF
+  GENERATIF
+  PANEN
+  SELESAI
 }
 
 enum StatusIrigasi {
-  dijadwalkan
-  selesai
-  dibatalkan
-  terlewat
-
-  @@map("status_irigasi")
-}
-
-enum KategoriBiaya {
-  benih
-  pupuk
-  pestisida
-  tenaga_kerja
-  irigasi
-  alat
-  lainnya
-
-  @@map("kategori_biaya")
+  DIJADWALKAN
+  SELESAI
+  DIBATALKAN
 }
 
 model User {
-  id         String   @id @default(uuid()) @db.Uuid
-  authId     String   @unique @map("auth_id") @db.Uuid
-  nama       String   @db.VarChar(255)
-  email      String   @unique @db.VarChar(255)
-  role       UserRole @default(mitra)
-  noTelepon  String?  @map("no_telepon") @db.VarChar(20)
-  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz()
-  updatedAt  DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz()
+  id             String    @id @default(uuid()) @db.Uuid
+  name           String
+  email          String    @unique
+  password       String
+  role           Role      @default(MITRA)
+  phone          String?
+  otp            String?
+  otpExpiresAt   DateTime? @map("otp_expires_at")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
 
-  lahan Lahan[]
+  lahan       Lahan[]
+  siklusTanam SiklusTanam[]
 
   @@map("users")
 }
 
 model Lahan {
-  id         String   @id @default(uuid()) @db.Uuid
-  userId     String   @map("user_id") @db.Uuid
-  nama       String   @db.VarChar(255)
-  lokasi     String?
-  luasHektar Decimal  @map("luas_hektar") @db.Decimal(10, 2)
-  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz()
-  updatedAt  DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz()
+  id           String      @id @default(uuid()) @db.Uuid
+  userId       String      @map("user_id") @db.Uuid
+  nama         String
+  lokasi       String
+  luasHektar   Decimal     @map("luas_hektar") @db.Decimal(10, 2)
+  komoditas    String
+  status       StatusLahan @default(AKTIF)
+  createdAt    DateTime    @default(now()) @map("created_at")
+  updatedAt    DateTime    @updatedAt @map("updated_at")
 
-  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-  siklusTanam   SiklusTanam[]
-  jadwalIrigasi JadwalIrigasi[]
+  user            User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  siklusTanam     SiklusTanam[]
+  jadwalIrigasi   JadwalIrigasi[]
 
-  @@index([userId])
   @@map("lahan")
 }
 
 model SiklusTanam {
-  id                 String         @id @default(uuid()) @db.Uuid
-  lahanId            String         @map("lahan_id") @db.Uuid
-  varietas           VarietasJagung
-  tanggalTanam       DateTime       @map("tanggal_tanam") @db.Date
-  estimasiPanen      DateTime       @map("estimasi_panen") @db.Date
-  tanggalPanenAktual DateTime?      @map("tanggal_panen_aktual") @db.Date
-  status             StatusSiklus   @default(perencanaan)
-  catatan            String?
-  createdAt          DateTime       @default(now()) @map("created_at") @db.Timestamptz()
-  updatedAt          DateTime       @default(now()) @updatedAt @map("updated_at") @db.Timestamptz()
+  id                    String       @id @default(uuid()) @db.Uuid
+  lahanId               String       @map("lahan_id") @db.Uuid
+  userId                String       @map("user_id") @db.Uuid
+  tanggalTanam          DateTime     @map("tanggal_tanam")
+  tanggalPanenEstimasi  DateTime     @map("tanggal_panen_estimasi")
+  tanggalPanenAktual    DateTime?    @map("tanggal_panen_aktual")
+  varietas              String
+  status                StatusSiklus @default(PERSIAPAN)
+  createdAt             DateTime     @default(now()) @map("created_at")
+  updatedAt             DateTime     @updatedAt @map("updated_at")
 
-  lahan         Lahan          @relation(fields: [lahanId], references: [id], onDelete: Cascade)
-  hasilPanen    HasilPanen[]
-  biayaPanen    BiayaPanen[]
-  jadwalIrigasi JadwalIrigasi[]
+  lahan          Lahan           @relation(fields: [lahanId], references: [id], onDelete: Cascade)
+  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  hasilPanen     HasilPanen[]
+  biayaPanen     BiayaPanen[]
+  jadwalIrigasi  JadwalIrigasi[]
 
-  @@index([lahanId])
-  @@index([status])
   @@map("siklus_tanam")
 }
 
 model HasilPanen {
   id              String   @id @default(uuid()) @db.Uuid
-  siklusTanamId   String   @map("siklus_tanam_id") @db.Uuid
-  tanggalPanen    DateTime @map("tanggal_panen") @db.Date
-  jumlahKg        Decimal  @map("jumlah_kg") @db.Decimal(10, 2)
-  kualitas        String?  @db.VarChar(50)
-  hargaPerKg      Decimal? @map("harga_per_kg") @db.Decimal(12, 2)
-  totalPendapatan Decimal? @map("total_pendapatan") @db.Decimal(15, 2)
+  siklusId        String   @map("siklus_id") @db.Uuid
+  beratKg         Decimal  @map("berat_kg") @db.Decimal(10, 2)
+  hargaPerKg      Decimal  @map("harga_per_kg") @db.Decimal(12, 2)
+  totalPendapatan Decimal  @map("total_pendapatan") @db.Decimal(15, 2)
   catatan         String?
-  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz()
+  fotoBukti       String[] @map("foto_bukti")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
 
-  siklusTanam SiklusTanam @relation(fields: [siklusTanamId], references: [id], onDelete: Cascade)
+  siklus SiklusTanam @relation(fields: [siklusId], references: [id], onDelete: Cascade)
 
-  @@index([siklusTanamId])
   @@map("hasil_panen")
 }
 
 model BiayaPanen {
-  id            String        @id @default(uuid()) @db.Uuid
-  siklusTanamId String        @map("siklus_tanam_id") @db.Uuid
-  kategori      KategoriBiaya
-  deskripsi     String?
-  jumlah        Decimal       @db.Decimal(15, 2)
-  tanggal       DateTime      @db.Date
-  createdAt     DateTime      @default(now()) @map("created_at") @db.Timestamptz()
+  id                String  @id @default(uuid()) @db.Uuid
+  siklusId          String  @map("siklus_id") @db.Uuid
+  biayaBenih        Decimal @map("biaya_benih") @db.Decimal(12, 2)
+  biayaPupuk        Decimal @map("biaya_pupuk") @db.Decimal(12, 2)
+  biayaPestisida    Decimal @map("biaya_pestisida") @db.Decimal(12, 2)
+  biayaTenagaKerja  Decimal @map("biaya_tenaga_kerja") @db.Decimal(12, 2)
+  biayaIrigasi      Decimal @map("biaya_irigasi") @db.Decimal(12, 2)
+  biayaLainnya      Decimal @map("biaya_lainnya") @db.Decimal(12, 2)
+  totalBiaya        Decimal @map("total_biaya") @db.Decimal(15, 2)
+  margin            Decimal @db.Decimal(15, 2)
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
 
-  siklusTanam SiklusTanam @relation(fields: [siklusTanamId], references: [id], onDelete: Cascade)
+  siklus SiklusTanam @relation(fields: [siklusId], references: [id], onDelete: Cascade)
 
-  @@index([siklusTanamId])
-  @@index([kategori])
   @@map("biaya_panen")
 }
 
 model JadwalIrigasi {
-  id            String        @id @default(uuid()) @db.Uuid
-  lahanId       String        @map("lahan_id") @db.Uuid
-  siklusTanamId String?       @map("siklus_tanam_id") @db.Uuid
-  tanggalWaktu  DateTime      @map("tanggal_waktu") @db.Timestamptz()
-  durasiMenit   Int           @map("durasi_menit")
-  volumeLiter   Decimal?      @map("volume_liter") @db.Decimal(10, 2)
-  status        StatusIrigasi @default(dijadwalkan)
-  catatan       String?
-  createdAt     DateTime      @default(now()) @map("created_at") @db.Timestamptz()
-  updatedAt     DateTime      @default(now()) @updatedAt @map("updated_at") @db.Timestamptz()
+  id           String        @id @default(uuid()) @db.Uuid
+  lahanId      String        @map("lahan_id") @db.Uuid
+  siklusId     String?       @map("siklus_id") @db.Uuid
+  tanggalWaktu DateTime      @map("tanggal_waktu")
+  durasiMenit  Int           @map("durasi_menit")
+  volumeLiter  Decimal       @map("volume_liter") @db.Decimal(10, 2)
+  status       StatusIrigasi @default(DIJADWALKAN)
+  catatan      String?
+  createdAt    DateTime      @default(now()) @map("created_at")
+  updatedAt    DateTime      @updatedAt @map("updated_at")
 
-  lahan       Lahan        @relation(fields: [lahanId], references: [id], onDelete: Cascade)
-  siklusTanam SiklusTanam? @relation(fields: [siklusTanamId], references: [id], onDelete: SetNull)
+  lahan  Lahan        @relation(fields: [lahanId], references: [id], onDelete: Cascade)
+  siklus SiklusTanam? @relation(fields: [siklusId], references: [id], onDelete: SetNull)
 
-  @@index([lahanId])
-  @@index([siklusTanamId])
-  @@index([status])
-  @@index([tanggalWaktu])
   @@map("jadwal_irigasi")
 }

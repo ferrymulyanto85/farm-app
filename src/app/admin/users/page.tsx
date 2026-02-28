@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 
 async function getUsersData() {
   const users = await prisma.user.findMany({
-    where: { role: "mitra" },
+    where: { role: "MITRA" },
     orderBy: { createdAt: "desc" },
     include: {
       _count: {
@@ -65,11 +65,11 @@ export default async function AdminUsersPage() {
                 users.map((user) => (
                   <tr key={user.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 font-medium text-gray-900">
-                      {user.nama}
+                      {user.name}
                     </td>
                     <td className="px-6 py-4 text-gray-600">{user.email}</td>
                     <td className="px-6 py-4 text-gray-600">
-                      {user.noTelepon || "-"}
+                      {user.phone || "-"}
                     </td>
                     <td className="px-6 py-4 text-gray-600">
                       {user._count.lahan}

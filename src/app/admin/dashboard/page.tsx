@@ -9,10 +9,10 @@ async function getDashboardData() {
   const [totalLahan, totalMitra, panenBulanIni, siklusTerbaru] =
     await Promise.all([
       prisma.lahan.count(),
-      prisma.user.count({ where: { role: "mitra" } }),
+      prisma.user.count({ where: { role: "MITRA" } }),
       prisma.hasilPanen.findMany({
         where: {
-          tanggalPanen: {
+          createdAt: {
             gte: startOfMonth,
             lte: endOfMonth,
           },
@@ -27,7 +27,7 @@ async function getDashboardData() {
         include: {
           lahan: {
             include: {
-              user: { select: { nama: true } },
+              user: { select: { name: true } },
             },
           },
         },
@@ -65,13 +65,12 @@ function formatDate(date: Date) {
 }
 
 const statusLabels: Record<string, { label: string; color: string }> = {
-  perencanaan: { label: "Perencanaan", color: "bg-gray-100 text-gray-700" },
-  persiapan_lahan: { label: "Persiapan Lahan", color: "bg-yellow-100 text-yellow-700" },
-  penanaman: { label: "Penanaman", color: "bg-blue-100 text-blue-700" },
-  perawatan: { label: "Perawatan", color: "bg-cyan-100 text-cyan-700" },
-  panen: { label: "Panen", color: "bg-green-100 text-green-700" },
-  selesai: { label: "Selesai", color: "bg-brand-100 text-brand-700" },
-  gagal: { label: "Gagal", color: "bg-red-100 text-red-700" },
+  PERSIAPAN: { label: "Persiapan", color: "bg-yellow-100 text-yellow-700" },
+  TANAM: { label: "Tanam", color: "bg-blue-100 text-blue-700" },
+  VEGETATIF: { label: "Vegetatif", color: "bg-cyan-100 text-cyan-700" },
+  GENERATIF: { label: "Generatif", color: "bg-indigo-100 text-indigo-700" },
+  PANEN: { label: "Panen", color: "bg-green-100 text-green-700" },
+  SELESAI: { label: "Selesai", color: "bg-brand-100 text-brand-700" },
 };
 
 export default async function AdminDashboardPage() {
@@ -163,7 +162,7 @@ export default async function AdminDashboardPage() {
                         {siklus.lahan.nama}
                       </td>
                       <td className="px-6 py-4 text-gray-600">
-                        {siklus.lahan.user.nama}
+                        {siklus.lahan.user.name}
                       </td>
                       <td className="px-6 py-4 text-gray-600">
                         {siklus.varietas}
@@ -172,7 +171,7 @@ export default async function AdminDashboardPage() {
                         {formatDate(siklus.tanggalTanam)}
                       </td>
                       <td className="px-6 py-4 text-gray-600">
-                        {formatDate(siklus.estimasiPanen)}
+                        {formatDate(siklus.tanggalPanenEstimasi)}
                       </td>
                       <td className="px-6 py-4">
                         <span
