@@ -1,71 +1,52 @@
-"use client";
+import { getServerSession } from "next-auth";
+import { redirect } from "next/navigation";
+import { authOptions } from "@/lib/auth";
+import AdminSidebar from "@/components/admin/AdminSidebar";
 
-import { useSession, signOut } from "next-auth/react";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
-import { SessionProvider } from "next-auth/react";
+export const metadata = {
+  title: "Admin Panel - Asribuanafarm",
+};
 
-function AdminLayoutInner({ children }: { children: React.ReactNode }) {
-  const { data: session, status } = useSession();
-  const router = useRouter();
+export default async function AdminLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const session = await getServerSession(authOptions);
 
-  if (status === "loading") {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="text-gray-500">Memuat...</p>
-      </div>
-    );
+  if (!session?.user) {
+    redirect("/login");
   }
 
-  if (!session || session.user.role !== "admin") {
-    router.push("/login");
-    return null;
-  }
+  const user = session.user as { name?: string; role?: string };
+  const userName = user.name || "Admin";
+  const userRole = user.role || "admin";
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <nav className="bg-white shadow">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16">
-            <div className="flex items-center space-x-8">
-              <Link href="/admin/dashboard" className="text-xl font-bold text-green-600">
-                Farm App
-              </Link>
-              <Link href="/admin/dashboard" className="text-gray-700 hover:text-green-600">
-                Dashboard
-              </Link>
-              <Link href="/admin/lahan" className="text-gray-700 hover:text-green-600">
-                Lahan
-              </Link>
-              <Link href="/admin/users" className="text-gray-700 hover:text-green-600">
-                Users
-              </Link>
+      <AdminSidebar userName={userName} userRole={userRole} />
+
+      {/* Main content */}
+      <div className="lg:pl-64">
+        {/* Top header */}
+        <header className="sticky top-0 z-20 flex h-16 items-center justify-between border-b border-gray-200 bg-white px-6 pl-16 lg:pl-6">
+          <h1 className="text-lg font-semibold text-gray-800">
+            Admin Panel
+          </h1>
+          <div className="flex items-center gap-3">
+            <div className="text-right">
+              <p className="text-sm font-medium text-gray-700">{userName}</p>
+              <p className="text-xs text-gray-500 capitalize">{userRole}</p>
             </div>
-            <div className="flex items-center space-x-4">
-              <span className="text-sm text-gray-500">
-                {session.user.name} (Admin)
-              </span>
-              <button
-                onClick={() => signOut({ callbackUrl: "/login" })}
-                className="text-sm text-red-600 hover:text-red-800"
-              >
-                Logout
-              </button>
+            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-600 text-sm font-bold text-white">
+              {userName.charAt(0).toUpperCase()}
             </div>
           </div>
-        </div>
-      </nav>
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {children}
-      </main>
-    </div>
-  );
-}
+        </header>
 
-export default function AdminLayout({ children }: { children: React.ReactNode }) {
-  return (
-    <SessionProvider>
-      <AdminLayoutInner>{children}</AdminLayoutInner>
-    </SessionProvider>
+        {/* Page content */}
+        <main className="p-6">{children}</main>
+      </div>
+    </div>
   );
 }

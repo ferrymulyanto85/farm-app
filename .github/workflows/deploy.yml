@@ -1,0 +1,25 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    name: Deploy to Server
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.SECRET_HOST }}
+          username: root
+          key: ${{ secrets.SECRET_SSH_KEY }}
+          script: |
+            cd /home/ubuntu/farm-app
+            git pull origin main
+            npm install
+            npm run build
+            pm2 restart farm-app || pm2 start npm --name farm-app -- start
